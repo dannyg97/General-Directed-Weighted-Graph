@@ -18,6 +18,7 @@ class Graph {
   // Completely forgot how to use default constructors
   Graph<N, E>() = default;
 
+  // Quick and easy constructor, will move to .tpp file later
   Graph<N, E>(typename std::vector<N>::const_iterator begin, typename std::vector<N>::const_iterator end){
     size = end - begin;
     std::cout << size;
@@ -35,28 +36,41 @@ class Graph {
     Node(const N& inputValue) {
       value = inputValue;
     }
+
+   
+   private:
+    // 'N' datatype for value (value is the name of the node, change later?)
     N value;
-
+    // Keep a vector of all outbound edges
+    // Add vector of all inbound edges later 
     std::vector<std::shared_ptr<Edge>> outEdges;
-
   };
 
   class Edge {
    public:
+    // Edge(nodeSource, nodeDestination, nodeWeight);
     Edge(std::shared_ptr<Node> nodeSource, std::shared_ptr<Node> nodeDestination, const E& nodeWeight) {
       source = nodeSource;
       destination = nodeDestination;
       weight = nodeWeight;
     }
 
+    // If the shared pointer for node
+    // disappears, these weak pointers  will also disappear (good)
     std::weak_ptr<Node> source;
     std::weak_ptr<Node> destination;
+    // Weight kept in template type E (int, double, float), no need to declare template
     E weight;
   };
 
   friend std::ostream& operator<<(std::ostream& os, const gdwg::Graph<N, E>& g){
-    os << "\n";
+    os << "\n"; // Debugging here
     for (auto const& [key, val] : g.nodegraph) {
+      // Should change 'val' because it's too confusing
+      // Shouldn't be printing val->value, just testing to see if it works
+      // Realistically it should be printing 'key' and another for loop
+      // that loops through the entire set of outward bound edges
+      // (in sorted order)
       std::cout << key << ':' << val->value << std::endl;
     }
     return os;
