@@ -4,6 +4,8 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <tuple>
+#include <iostream>
 #include <memory>
 
 
@@ -18,15 +20,57 @@ class Graph {
   // Completely forgot how to use default constructors
   Graph<N, E>() = default;
 
-  // Quick and easy constructor, will move to .tpp file later
+  // Constructor for begin, end iterators
   Graph<N, E>(typename std::vector<N>::const_iterator begin, typename std::vector<N>::const_iterator end){
     size = end - begin;
-    std::cout << size;
-    for (auto i = begin; i != end; ++i ) {
+    for (auto i = begin; i != end; ++i) {
       nodegraph[*i] = std::make_shared<Node>(*i);
-       std::cout << *i;
     }
   }
+
+  // Constructor for tuple begin, end iterators
+  Graph<N, E>(typename std::vector<std::tuple<N, N, E>>::const_iterator begin, typename std::vector<std::tuple<N, N, E>>::const_iterator end){
+    size = end - begin;
+    for (auto i = begin; i != end; ++i) {
+      auto source_val = std::get<0>(*i);
+      auto dest_val = std::get<1>(*i);
+      auto weight_val = std::get<2>(*i);
+
+      // If either source or dest doesn't exist, create it
+      if (!nodegraph[source_val]) {
+        nodegraph[source_val] = std::make_shared<Node>(source_val);
+      }
+      if (!nodegraph[dest_val]) {
+        nodegraph[dest_val] = std::make_shared<Node>(dest_val);
+      }
+
+      // Now add edges
+      // nodegraph.find(source_val)->second POINTS TO THE NODE
+      // ->getValue() finds the value of the node
+
+      auto source = nodegraph.find(source_val)->second;
+      auto dest = nodegraph.find(dest_val)->second;
+      auto edge = std::make_shared<Edge>(source, dest, weight_val);
+
+      // Will outEdges private later
+      // when we do, we'll have to change this
+      source->outEdges.push_back(edge);
+    }
+  }
+
+  // Constructor for iniialiser list of nodes
+  Graph<N, E>(typename std::initializer_list<N> list) {
+    size = list.size();
+    for (auto i = list.begin(); i != list.end(); ++i) {
+      nodegraph[*i] = std::make_shared<Node>(*i);
+    }
+  }
+  // Copy constructor
+
+  // Move constructor
+
+  // Destructor
+  ~Graph<N, E>() = default;
 
   // You HAVE TO declare class Edge prior to creating a vector of type 'Edge', or it'll chuck an error, because C++ reads top->bottom (I think)
   class Edge;
@@ -37,13 +81,15 @@ class Graph {
       value = inputValue;
     }
 
-   
-   private:
-    // 'N' datatype for value (value is the name of the node, change later?)
-    N value;
+    N getValue() {
+      return value;
+    }
+
     // Keep a vector of all outbound edges
-    // Add vector of all inbound edges later 
+    // I'll make this private later on :")
     std::vector<std::shared_ptr<Edge>> outEdges;
+   private:
+    N value;
   };
 
   class Edge {
@@ -55,23 +101,52 @@ class Graph {
       weight = nodeWeight;
     }
 
+    E getWeight() {
+      return weight;
+    }
+
+    // You can only access the contents of a weak_ptr by creating the shared_ptr equivalent (via lock)
+    N getSource() {
+      std::shared_ptr<Node> tmp = source.lock();
+      return tmp->getValue();
+    }
+
+    N getDest() {
+      std::shared_ptr<Node> tmp = destination.lock();
+      return tmp->getValue();
+    }
+
+   private:
     // If the shared pointer for node
     // disappears, these weak pointers  will also disappear (good)
     std::weak_ptr<Node> source;
     std::weak_ptr<Node> destination;
-    // Weight kept in template type E (int, double, float), no need to declare template
+    // Weight in type E
     E weight;
   };
 
+  bool insertNode(const N& val) {
+    if(nodegraph[val]) return false;
+    nodegraph[val] = std::make_shared<Node>(val);
+    return true;
+  }
+
+  bool insertEdge(const N& src, const N& dst, const E& w){
+    auto source = nodegraph.find(src)->second;
+    auto destination = nodegraph.find(dst)->second;
+    auto edge = std::make_shared<Edge>(source, destination, w);
+    source->outEdges.push_back(edge);
+    return true;
+  }
+
   friend std::ostream& operator<<(std::ostream& os, const gdwg::Graph<N, E>& g){
-    os << "\n"; // Debugging here
+    std::vector<std::shared_ptr<Node>> tmp;
     for (auto const& [key, val] : g.nodegraph) {
-      // Should change 'val' because it's too confusing
-      // Shouldn't be printing val->value, just testing to see if it works
-      // Realistically it should be printing 'key' and another for loop
-      // that loops through the entire set of outward bound edges
-      // (in sorted order)
-      std::cout << key << ':' << val->value << std::endl;
+      os << key << " (" << std::endl;
+      for (std::shared_ptr<Edge> edges: val->outEdges) {
+        os << "  " << edges->getDest() << " | " << edges->getWeight() << std::endl;
+      }
+      os << ")" << std::endl;
     }
     return os;
   }
