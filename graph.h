@@ -8,6 +8,7 @@
 #include <iostream>
 #include <memory>
 
+#include "assignments/dg/graph.tpp"
 
 namespace gdwg {
 
@@ -22,7 +23,6 @@ class Graph {
 
   // Constructor for begin, end iterators
   Graph<N, E>(typename std::vector<N>::const_iterator begin, typename std::vector<N>::const_iterator end){
-    size = end - begin;
     for (auto i = begin; i != end; ++i) {
       nodegraph[*i] = std::make_shared<Node>(*i);
     }
@@ -30,7 +30,6 @@ class Graph {
 
   // Constructor for tuple begin, end iterators
   Graph<N, E>(typename std::vector<std::tuple<N, N, E>>::const_iterator begin, typename std::vector<std::tuple<N, N, E>>::const_iterator end){
-    size = end - begin;
     for (auto i = begin; i != end; ++i) {
       auto source_val = std::get<0>(*i);
       auto dest_val = std::get<1>(*i);
@@ -52,7 +51,7 @@ class Graph {
       auto dest = nodegraph.find(dest_val)->second;
       auto edge = std::make_shared<Edge>(source, dest, weight_val);
 
-      // Will outEdges private later
+      // Will make this private later
       // when we do, we'll have to change this
       source->outEdges.push_back(edge);
     }
@@ -60,17 +59,61 @@ class Graph {
 
   // Constructor for iniialiser list of nodes
   Graph<N, E>(typename std::initializer_list<N> list) {
-    size = list.size();
     for (auto i = list.begin(); i != list.end(); ++i) {
       nodegraph[*i] = std::make_shared<Node>(*i);
     }
   }
-  // Copy constructor
 
-  // Move constructor
+  // Copy constructor
+  Graph<N, E>(Graph& orig) {
+    for (const auto& i : orig.nodegraph) {
+      insertNode(i.first);
+    }
+
+    // Entering the node
+    for (const auto& j : orig.nodegraph) {
+      // Entering the node's vector of edges
+      for (const auto& k : j.second->outEdges) {
+        // Entering the node's edge's src, dst, and weight
+        N src = k->getSource();
+        N dst = k->getDest();
+        E weight = k->getWeight();
+        insertEdge(src, dst, weight);
+      }
+    }
+  }
+
+  // Move constructor, default one is fine
+  Graph<N, E>(Graph &&original) = default;
 
   // Destructor
   ~Graph<N, E>() = default;
+
+  // Copy assignment
+  // Uses logic of copy constructor
+  // and std::move to make this abomination
+  Graph<N, E>& operator=(const Graph<N, E>& orig) {
+    Graph<N, E> tmp;
+    for (const auto& i : orig.nodegraph) {
+      tmp.insertNode(i.first);
+    }
+    // Entering the node
+    for (const auto& j : orig.nodegraph) {
+      // Entering the node's vector of edges
+      for (const auto& k : j.second->outEdges) {
+        // Entering the node's edge's src, dst, and weight
+        N src = k->getSource();
+        N dst = k->getDest();
+        E weight = k->getWeight();
+        tmp.insertEdge(src, dst, weight);
+      }
+    }
+    *this = std::move(tmp);
+    return *this;
+  }
+
+  // Move assignment, default one is fine
+  Graph<N, E>& operator=(Graph<N, E>&&) = default;
 
   // You HAVE TO declare class Edge prior to creating a vector of type 'Edge', or it'll chuck an error, because C++ reads top->bottom (I think)
   class Edge;
@@ -153,11 +196,8 @@ class Graph {
 
  private:
   std::map<N, std::shared_ptr<Node>> nodegraph;
-  int size;
 };
 
 }  // namespace gdwg
-
-#include "assignments/dg/graph.tpp"
 
 #endif  // ASSIGNMENTS_DG_GRAPH_H_
