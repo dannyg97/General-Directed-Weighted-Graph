@@ -21,9 +21,31 @@ int main() {
   gdwg::Graph<std::string, double> b{e.begin(), e.end()};
   std::cout << b << std::endl;
 
+  // Test copy constructor works
+  gdwg::Graph<std::string, double> bCopy{b};
+  std::cout << bCopy << std::endl;
+
+  // Test move constructor works
+  gdwg::Graph <std::string, double> bMove{std::move(bCopy)};
+  std::cout << bMove << std::endl;
+  std::cout << "Moved bCopy\nShould return nothing" << std::endl;
+  std::cout << bCopy << std::endl;
+
+  // Test copy assignment works
+  std::cout << "Copy assignment" << std::endl;
+  bCopy = bMove;
+  std::cout << bCopy << std::endl;
+
+  // Test move assignment works
+  std::cout << "Move assignment" << std::endl;
+  bMove = std::move(bCopy);
+  std::cout << bMove;
+  std::cout << bCopy << "Should return nothing" << std::endl;
+
   // Test initialiser list constructor works
   gdwg::Graph<char, std::string> c{'a', 'b', 'x', 'y'};
   std::cout << c << std::endl;
+
 
   // Test insert node works
   std::cout << "Inserting node" << std::endl;
@@ -34,4 +56,5 @@ int main() {
   std::cout << "Inserting edge" << std::endl;
   c.insertEdge('a', 'b', "five");
   std::cout << c << std::endl;
+
 }
