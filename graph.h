@@ -18,7 +18,7 @@ class Graph {
   // Required to define
   // class const_iterator {};
 
-  // Completely forgot how to use default constructors
+  // Default constructor
   Graph<N, E>() = default;
 
   // Constructor for begin, end iterators
@@ -67,7 +67,7 @@ class Graph {
   // Copy constructor
   Graph<N, E>(Graph& orig) {
     for (const auto& i : orig.nodegraph) {
-      insertNode(i.first);
+      InsertNode(i.first);
     }
 
     // Entering the node
@@ -78,7 +78,7 @@ class Graph {
         N src = k->getSource();
         N dst = k->getDest();
         E weight = k->getWeight();
-        insertEdge(src, dst, weight);
+        InsertEdge(src, dst, weight);
       }
     }
   }
@@ -95,7 +95,7 @@ class Graph {
   Graph<N, E>& operator=(const Graph<N, E>& orig) {
     Graph<N, E> tmp;
     for (const auto& i : orig.nodegraph) {
-      tmp.insertNode(i.first);
+      tmp.InsertNode(i.first);
     }
     // Entering the node
     for (const auto& j : orig.nodegraph) {
@@ -105,7 +105,7 @@ class Graph {
         N src = k->getSource();
         N dst = k->getDest();
         E weight = k->getWeight();
-        tmp.insertEdge(src, dst, weight);
+        tmp.InsertEdge(src, dst, weight);
       }
     }
     *this = std::move(tmp);
@@ -128,8 +128,6 @@ class Graph {
       return value;
     }
 
-    // Keep a vector of all outbound edges
-    // I'll make this private later on :")
     std::vector<std::shared_ptr<Edge>> outEdges;
    private:
     N value;
@@ -168,13 +166,14 @@ class Graph {
     E weight;
   };
 
-  bool insertNode(const N& val) {
+  bool InsertNode(const N& val) {
     if(nodegraph[val]) return false;
     nodegraph[val] = std::make_shared<Node>(val);
     return true;
   }
 
-  bool insertEdge(const N& src, const N& dst, const E& w){
+  // TODO: Add false
+  bool InsertEdge(const N& src, const N& dst, const E& w){
     auto source = nodegraph.find(src)->second;
     auto destination = nodegraph.find(dst)->second;
     auto edge = std::make_shared<Edge>(source, destination, w);
@@ -182,8 +181,29 @@ class Graph {
     return true;
   }
 
+  // TODO: Add false (and make it actually work)
+//  bool erase(const N& src, const N& dst, const E& w){
+//    auto source = nodegraph.find(src)->second;
+//    auto destination = nodegraph.find(dst)->second;
+//    auto edge = std::make_shared<Edge>(source, destination, w);
+//    std::cout << source->outEdges->getWeight();
+//    return true;
+//  }
+
+  bool IsNode(const N& val) {
+    if (!nodegraph[val]) return false;
+    return true;
+  }
+
+  bool IsConnected(const N& src, const N& dst) {
+    auto source = nodegraph.find(src)->second;
+    for (const auto& edge : source->outEdges) {
+      if((edge->getSource() == src) && (edge->getDest() == dst))        return true;
+    }
+    return false;
+  }
+
   friend std::ostream& operator<<(std::ostream& os, const gdwg::Graph<N, E>& g){
-    std::vector<std::shared_ptr<Node>> tmp;
     for (auto const& [key, val] : g.nodegraph) {
       os << key << " (" << std::endl;
       for (std::shared_ptr<Edge> edges: val->outEdges) {
@@ -192,6 +212,11 @@ class Graph {
       os << ")" << std::endl;
     }
     return os;
+  }
+
+  // TODO: Make it actually work
+  friend bool operator==(const gdwg::Graph<N, E>&, const gdwg::Graph<N, E>&) {
+    return true;
   }
 
  private:
