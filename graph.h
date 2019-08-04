@@ -176,6 +176,10 @@ class Graph {
       return tmp->getValue();
     }
 
+    E& getWeightRef() {
+      return weight;
+    }
+
     N& getSourceRef() {
       std::shared_ptr<Node> tmp = source.lock();
       return tmp->getValueRef();
@@ -262,7 +266,7 @@ class Graph {
 
     //*, ++, --, == and !=
     reference operator*() const {
-      return {edge_it_->get()->getSourceRef(),edge_it_->get()->getDestRef(),edge_it_->get()->getWeight()};
+      return {edge_it_->get()->getSourceRef(),edge_it_->get()->getDestRef(),edge_it_->get()->getWeightRef()};
     }
 
     const_iterator operator++() {
