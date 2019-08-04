@@ -56,5 +56,19 @@ int main() {
   std::cout << "Inserting edge" << std::endl;
   c.insertEdge('a', 'b', "five");
   std::cout << c << std::endl;
+  
+  if (c.IsNode('a') == true) {
+    std::cout << "IsNode works for true" << std::endl;
+  }
+  if (c.IsNode('z') == false) {
+    std::cout << "IsNode works for false" << std::endl;
+  }
 
+  if(c.IsConnected('a', 'b') == true) {
+    std::cout << "IsConnected works for true" << std::endl;
+  }
+  if(c.IsConnected('a', 'c') == false) {
+    std::cout << "IsConnected works for false" << std::endl;
+  }
+  
 }
