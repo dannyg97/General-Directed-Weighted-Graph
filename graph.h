@@ -159,11 +159,11 @@ class Graph {
       sort(outEdges.begin(), outEdges.end(),edgeSort);
       return outEdges.end();
     }
-    typename std::vector<std::shared_ptr<Edge>>::iterator rbegin(){
+    typename std::vector<std::shared_ptr<Edge>>::reverse_iterator rbegin(){
       sort(outEdges.begin(), outEdges.end(),edgeSort);
       return outEdges.rbegin();
     }
-    typename std::vector<std::shared_ptr<Edge>>::iterator rend(){
+    typename std::vector<std::shared_ptr<Edge>>::reverse_iterator rend(){
       sort(outEdges.begin(), outEdges.end(),edgeSort);
       return outEdges.rend();
     }
@@ -357,6 +357,88 @@ class Graph {
     const_iterator(const decltype(node_it_)& node1_it, const decltype(sentinel_)& sentinel, const decltype(edge_it_)& edge_it): node_it_{node1_it}, sentinel_{sentinel}, edge_it_{edge_it} {}
   };
 
+
+  class const_reverse_iterator {
+    using iterator_category = std::bidirectional_iterator_tag;
+    using value_type = std::tuple<N, N, E>;
+    using reference = std::tuple<const N&, const N&, const E&>;
+    //using pointer = std::tuple<N, N, E>*;
+    using difference_type = int;
+   public:
+
+    //*, ++, --, == and !=
+    reference operator*() const {
+      return {edge_it_->get()->getSourceRef(),edge_it_->get()->getDestRef(),edge_it_->get()->getWeightRef()};
+    }
+
+    const_reverse_iterator operator++() {
+      ++edge_it_;
+      if (edge_it_ == node_it_->second->rend()) {
+        do {
+          ++node_it_;
+        } while (node_it_ != sentinel_ && node_it_->second->rbegin() == node_it_->second->rend());
+        if (node_it_ != sentinel_) {
+          edge_it_ = node_it_->second->rbegin();
+        }
+      }
+      return *this;
+    }
+    const_reverse_iterator operator++(int) {
+      auto copy{*this};
+      ++(*this);
+      return copy;
+    }
+  //TODO: backwards iterating
+    const_reverse_iterator operator--() {
+      if(node_it_ == sentinel_){
+        do {
+          --node_it_;
+          edge_it_ = node_it_->second->rbegin();
+        } while (node_it_->second->rbegin() == node_it_->second->rend());
+        while(edge_it_ != node_it_->second->rend())++edge_it_;
+        --edge_it_; // 1 before the end
+        return *this;
+      }
+      if(edge_it_ == node_it_->second->rbegin()){
+        do {
+          --node_it_;
+          edge_it_ = node_it_->second->rbegin();
+        } while (node_it_->second->rbegin() == node_it_->second->rend());
+        while(edge_it_ != node_it_->second->rend())++edge_it_;
+        --edge_it_; // 1 before the end
+        return *this;
+      }
+      // case for internally going back
+      --edge_it_;
+      return *this;
+    }
+    const_reverse_iterator operator--(int) {
+      auto copy{*this};
+      --(*this);
+      return copy;
+    }
+
+    friend bool operator==(const const_reverse_iterator& lhs, const const_reverse_iterator& rhs) {
+      return ((lhs.node_it_ == rhs.node_it_) && (lhs.node_it_ == lhs.sentinel_ || lhs.edge_it_ == rhs.edge_it_));
+    }
+
+    friend bool operator!=(const const_reverse_iterator& lhs, const const_reverse_iterator& rhs) {
+      return !(lhs == rhs);
+    }
+
+   private:
+    //pointer operator->() const { return &(operator*()); }
+    //Edge* edge_;
+    //explicit const_iterator(Edge* edge): edge_{edge} {};
+    typename std::map<N,std::shared_ptr<Node>>::reverse_iterator node_it_; // out-most iterator
+    typename std::map<N,std::shared_ptr<Node>>::reverse_iterator sentinel_;
+    //typename std::vector<std::vector<N>>::iterator node2_it_; // other_node_container_for_node
+    typename std::vector<std::shared_ptr<Edge>>::reverse_iterator edge_it_; /*other_edge_container_for_node_pair(edge_  inner iterator*/
+
+    friend class Graph;
+    const_reverse_iterator(const decltype(node_it_)& node1_it, const decltype(sentinel_)& sentinel, const decltype(edge_it_)& edge_it): node_it_{node1_it}, sentinel_{sentinel}, edge_it_{edge_it} {}
+  };
+
   std::vector<std::shared_ptr<Node>> GetNodeClasses(){
     std::vector<std::shared_ptr<Node>> v;
     for(const auto& it : nodegraph) {
@@ -377,14 +459,18 @@ class Graph {
   const_iterator end(){
     return const_iterator{nodegraph.end(), nodegraph.end(), {}};
   }
-/*TODO:Reverse begin
-  reverse_iterator rbegin(){
+
+  const_reverse_iterator rbegin(){
     // What if the first element is empty?
     if (auto first = std::find_if(nodegraph.rbegin(), nodegraph.rend(), [] (const std::pair<N,std::shared_ptr<Node>>& s) { return !((s.second)->empty()); }); first != nodegraph.rend()) {
-      return const_iterator{first, nodegraph.rend(), first->second->rbegin()};
+      return const_reverse_iterator{first, nodegraph.rend(), first->second->rbegin()};
     }
     return rend();
-  }*/
+  }
+
+  const_reverse_iterator rend(){
+    return const_reverse_iterator{nodegraph.rend(), nodegraph.rend(), {}};
+  }
 
 
   const_iterator erase(const_iterator it){
