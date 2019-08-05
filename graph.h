@@ -139,12 +139,24 @@ class Graph {
     bool empty(){
       return outEdges.empty();
     }
+    static bool edgeSort(std::shared_ptr<Graph::Edge> v1, std::shared_ptr<Graph::Edge> v2){
+      if(v1->getSourceRef()<v2->getSourceRef()) return true;
+      else if(v2->getSourceRef()<v1->getSourceRef()) return false;
+      if(v1->getDestRef()<v2->getDestRef()) return true;
+      else if(v2->getDestRef()<v1->getDestRef()) return false;
+      if(v1->getWeightRef()<v2->getWeightRef()) return true;
+      else if(v2->getWeightRef()<v1->getWeightRef()) return false;
+
+      return true;
+    }
     //begin and end functions for iterator over inner edges
     //TODO: SORT BEFORE DOING THIS
     typename std::vector<std::shared_ptr<Edge>>::iterator begin(){
+      sort(outEdges.begin(), outEdges.end(),edgeSort);
       return outEdges.begin();
     }
     typename std::vector<std::shared_ptr<Edge>>::iterator end(){
+      sort(outEdges.begin(), outEdges.end(),edgeSort);
       return outEdges.end();
     }
 
@@ -298,7 +310,7 @@ class Graph {
     }
   */
     friend bool operator==(const const_iterator& lhs, const const_iterator& rhs) {
-      return (lhs.node_it_ == rhs.node_it_ && lhs.edge_it_ == rhs.edge_it_);
+      return ((lhs.node_it_ == rhs.node_it_) && (lhs.node_it_ == lhs.sentinel_ || lhs.edge_it_ == rhs.edge_it_));
     }
 
     friend bool operator!=(const const_iterator& lhs, const const_iterator& rhs) {
