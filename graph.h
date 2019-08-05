@@ -150,7 +150,7 @@ class Graph {
       return true;
     }
     //begin and end functions for iterator over inner edges
-    //TODO: SORT BEFORE DOING THIS
+    //TODO: maybe sort elsewhere
     typename std::vector<std::shared_ptr<Edge>>::iterator begin(){
       sort(outEdges.begin(), outEdges.end(),edgeSort);
       return outEdges.begin();
@@ -158,6 +158,14 @@ class Graph {
     typename std::vector<std::shared_ptr<Edge>>::iterator end(){
       sort(outEdges.begin(), outEdges.end(),edgeSort);
       return outEdges.end();
+    }
+    typename std::vector<std::shared_ptr<Edge>>::iterator rbegin(){
+      sort(outEdges.begin(), outEdges.end(),edgeSort);
+      return outEdges.rbegin();
+    }
+    typename std::vector<std::shared_ptr<Edge>>::iterator rend(){
+      sort(outEdges.begin(), outEdges.end(),edgeSort);
+      return outEdges.rend();
     }
 
    private:
@@ -298,9 +306,28 @@ class Graph {
       ++(*this);
       return copy;
     }
-  /*TODO: backwards iterating
+  //TODO: backwards iterating
     const_iterator operator--() {
-      node_ = node_->next.get();
+      if(node_it_ == sentinel_){
+        do {
+          --node_it_;
+          edge_it_ = node_it_->second->begin();
+        } while (node_it_->second->begin() == node_it_->second->end());
+        while(edge_it_ != node_it_->second->end())++edge_it_;
+        --edge_it_; // 1 before the end
+        return *this;
+      }
+      if(edge_it_ == node_it_->second->begin()){
+        do {
+          --node_it_;
+          edge_it_ = node_it_->second->begin();
+        } while (node_it_->second->begin() == node_it_->second->end());
+        while(edge_it_ != node_it_->second->end())++edge_it_;
+        --edge_it_; // 1 before the end
+        return *this;
+      }
+      // case for internally going back
+      --edge_it_;
       return *this;
     }
     const_iterator operator--(int) {
@@ -308,7 +335,7 @@ class Graph {
       --(*this);
       return copy;
     }
-  */
+
     friend bool operator==(const const_iterator& lhs, const const_iterator& rhs) {
       return ((lhs.node_it_ == rhs.node_it_) && (lhs.node_it_ == lhs.sentinel_ || lhs.edge_it_ == rhs.edge_it_));
     }
@@ -337,19 +364,7 @@ class Graph {
     }
     return v;
   }
-/*
-  const_iterator begin(){
-    auto node_vec = GetNodeClasses();
-    std::vector<std::shared_ptr<Edge>> edge_vec= node_vec.at(0).outEdges;
-    auto sentinel = node_vec.end();
-    return const_iterator{node_vec.begin(),sentinel,edge_vec.begin()};
-  }
-  const_iterator end(){
-    auto node_vec = GetNodeClasses();
-    std::vector<std::shared_ptr<Edge>> edge_vec= node_vec.rend()->outEdges;
-    auto sentinel = node_vec.end();
-    return const_iterator{node_vec.begin(),sentinel,edge_vec.begin()};
-  }*/
+
 
   const_iterator begin(){
     // What if the first element is empty?
@@ -361,6 +376,22 @@ class Graph {
 
   const_iterator end(){
     return const_iterator{nodegraph.end(), nodegraph.end(), {}};
+  }
+/*TODO:Reverse begin
+  reverse_iterator rbegin(){
+    // What if the first element is empty?
+    if (auto first = std::find_if(nodegraph.rbegin(), nodegraph.rend(), [] (const std::pair<N,std::shared_ptr<Node>>& s) { return !((s.second)->empty()); }); first != nodegraph.rend()) {
+      return const_iterator{first, nodegraph.rend(), first->second->rbegin()};
+    }
+    return rend();
+  }*/
+
+
+  const_iterator erase(const_iterator it){
+    if(it!=end()){
+      ++it;
+      erase(std::get<0>(*it),std::get<1>(*it),std::get<2>(*it));
+    }
   }
 
 
