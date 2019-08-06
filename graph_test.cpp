@@ -408,6 +408,24 @@ SCENARIO("Testing iterator functions") {
 
     g.InsertEdge("are", "you?", 3);
 
+    WHEN("++, --, == and != operations are used on an iterator"){
+      auto it=g.begin();
+      auto it1=g.begin();
+      THEN("== should return true for iterators at the same edge"){
+        REQUIRE(it==it1);
+      }
+      THEN("postfix ++ and -- returns a copy while prefix returns the new iterator"){
+        auto it2=it++;
+        auto it4=++it;
+        REQUIRE(it1==it2);
+        REQUIRE(it4==it);
+      }
+      THEN("!= should return true for iterators not at the same edge"){
+        REQUIRE(it!=it1);
+        REQUIRE(it2!=it4);
+      }
+    }
+
     WHEN("Graph is looped over with const_iterator") {
       THEN("all edges should be given in order source->dest->weight") {
         auto it=g.begin();
