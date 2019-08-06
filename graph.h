@@ -121,6 +121,16 @@ class Graph {
 
   class Node {
    public:
+std::shared_ptr<Edge> getEdge(const N& d, const E& w) const {
+      for (const auto& edge : outEdges) {
+        if ((edge->getWeight() == w) && (edge->getDest() == d)) {
+          return edge;
+        }
+      }
+      // Return null pointer if can't find anything?
+      // Or throw exception
+      return nullptr;
+    }
     Node(const N& inputValue) {
       value = inputValue;
     }
@@ -174,6 +184,7 @@ class Graph {
 
   class Edge {
    public:
+
     // Edge(nodeSource, nodeDestination, nodeWeight);
     Edge(std::shared_ptr<Node> nodeSource, std::shared_ptr<Node> nodeDestination, const E& nodeWeight) {
       source = nodeSource;
@@ -243,6 +254,16 @@ class Graph {
 //    std::cout << source->outEdges->getWeight();
 //    return true;
 //  }
+
+
+
+  bool erase(const N& src, const N& dst, const E& w){
+    // Source node
+    auto source = nodegraph.find(src)->second;
+    auto found = source->getEdge(dst, w);
+    source->outEdges.erase(std::remove(source->outEdges.begin(), source->outEdges.end(), found), source->outEdges.end());
+    return true;
+  }
 
   bool IsNode(const N& val) {
     if (!nodegraph[val]) return false;
@@ -472,12 +493,43 @@ class Graph {
     return const_reverse_iterator{nodegraph.rend(), nodegraph.rend(), {}};
   }
 
+  const_iterator cbegin(){
+    return begin();
+  }
+
+  const_iterator cend(){
+    return end();
+  }
+
+  const_reverse_iterator crbegin(){
+    return rbegin();
+  }
+
+  const_reverse_iterator crend(){
+    return crend();
+  }
+
 
   const_iterator erase(const_iterator it){
     if(it!=end()){
+      auto oldSource = std::get<0>(*it);
+      auto oldDest = std::get<1>(*it);
+      auto oldWeight = std::get<2>(*it);
       ++it;
-      erase(std::get<0>(*it),std::get<1>(*it),std::get<2>(*it));
+      erase(oldSource,oldDest,oldWeight);
+      return it;
     }
+    return end();
+  }
+
+  const_iterator find(const N& source, const N& dest, const E& weight){
+    auto it=begin();
+    for (; it != end(); ++it)
+    {
+      auto tuple = *it;
+      if(std::get<0>(tuple)==source && std::get<1>(tuple)==dest && std::get<2>(tuple)==weight) return it;
+    }
+    return it;
   }
 
 
