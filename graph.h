@@ -8,81 +8,27 @@
 #include <tuple>
 #include <iostream>
 #include <memory>
-
-#include "assignments/dg/graph.tpp"
+#include <set>
 
 namespace gdwg {
 
 template <typename N, typename E>
 class Graph {
  public:
-  // Required to define
-  // class const_iterator {};
-
   // Default constructor
   Graph<N, E>() = default;
 
   // Constructor for begin, end iterators
-  Graph<N, E>(typename std::vector<N>::const_iterator begin, typename std::vector<N>::const_iterator end){
-    for (auto i = begin; i != end; ++i) {
-      nodegraph[*i] = std::make_shared<Node>(*i);
-    }
-  }
+  Graph<N, E>(typename std::vector<N>::const_iterator begin, typename std::vector<N>::const_iterator end);
 
   // Constructor for tuple begin, end iterators
-  Graph<N, E>(typename std::vector<std::tuple<N, N, E>>::const_iterator begin, typename std::vector<std::tuple<N, N, E>>::const_iterator end){
-    for (auto i = begin; i != end; ++i) {
-      auto source_val = std::get<0>(*i);
-      auto dest_val = std::get<1>(*i);
-      auto weight_val = std::get<2>(*i);
+  Graph<N, E>(typename std::vector<std::tuple<N, N, E>>::const_iterator begin, typename std::vector<std::tuple<N, N, E>>::const_iterator end);
 
-      // If either source or dest doesn't exist, create it
-      if (!nodegraph[source_val]) {
-        nodegraph[source_val] = std::make_shared<Node>(source_val);
-      }
-      if (!nodegraph[dest_val]) {
-        nodegraph[dest_val] = std::make_shared<Node>(dest_val);
-      }
-
-      // Now add edges
-      // nodegraph.find(source_val)->second POINTS TO THE NODE
-      // ->getValue() finds the value of the node
-
-      auto source = nodegraph.find(source_val)->second;
-      auto dest = nodegraph.find(dest_val)->second;
-      auto edge = std::make_shared<Edge>(source, dest, weight_val);
-
-      // Will make this private later
-      // when we do, we'll have to change this
-      source->outEdges.push_back(edge);
-    }
-  }
-
-  // Constructor for iniialiser list of nodes
-  Graph<N, E>(typename std::initializer_list<N> list) {
-    for (auto i = list.begin(); i != list.end(); ++i) {
-      nodegraph[*i] = std::make_shared<Node>(*i);
-    }
-  }
+  // Constructor for initialiser list of nodes
+  Graph<N, E>(typename std::initializer_list<N> list);
 
   // Copy constructor
-  Graph<N, E>(Graph& orig) {
-    for (const auto& i : orig.nodegraph) {
-      InsertNode(i.first);
-    }
-
-    // Entering the node
-    for (const auto& j : orig.nodegraph) {
-      // Entering the node's vector of edges
-      for (const auto& k : j.second->outEdges) {
-        // Entering the node's edge's src, dst, and weight
-        N src = k->getSource();
-        N dst = k->getDest();
-        E weight = k->getWeight();
-        InsertEdge(src, dst, weight);
-      }
-    }
-  }
+  Graph<N, E>(Graph& orig);
 
   // Move constructor, default one is fine
   Graph<N, E>(Graph &&original) = default;
@@ -91,8 +37,7 @@ class Graph {
   ~Graph<N, E>() = default;
 
   // Copy assignment
-  // Uses logic of copy constructor
-  // and std::move to make this abomination
+  // Uses logic of copy constructor and std::move to make this abomination
   Graph<N, E>& operator=(const Graph<N, E>& orig) {
     Graph<N, E> tmp;
     for (const auto& i : orig.nodegraph) {
@@ -116,12 +61,27 @@ class Graph {
   // Move assignment, default one is fine
   Graph<N, E>& operator=(Graph<N, E>&&) = default;
 
-  // You HAVE TO declare class Edge prior to creating a vector of type 'Edge', or it'll chuck an error, because C++ reads top->bottom (I think)
+  // You HAVE TO declare class Edge prior to creating a vector of type 'Edge'
   class Edge;
 
   class Node {
    public:
-std::shared_ptr<Edge> getEdge(const N& d, const E& w) const {
+    Node(const N& inputValue) {
+      value = inputValue;
+    }
+
+    N getValue() const {
+      return value;
+    }
+
+    // for iterator
+    N& getValueRef();
+
+    void setValue(N newValue) {
+      this->value = newValue;
+    }
+
+    std::shared_ptr<Edge> getEdge(const N& d, const E& w) const {
       for (const auto& edge : outEdges) {
         if ((edge->getWeight() == w) && (edge->getDest() == d)) {
           return edge;
@@ -131,17 +91,8 @@ std::shared_ptr<Edge> getEdge(const N& d, const E& w) const {
       // Or throw exception
       return nullptr;
     }
-    Node(const N& inputValue) {
-      value = inputValue;
-    }
 
-    N getValue() {
-      return value;
-    }
 
-    N& getValueRef() {
-      return value;
-    }
 
     std::vector<std::shared_ptr<Edge>> outEdges;
 
@@ -149,6 +100,8 @@ std::shared_ptr<Edge> getEdge(const N& d, const E& w) const {
     bool empty(){
       return outEdges.empty();
     }
+    //begin and end functions for iterator over inner edges
+
     static bool edgeSort(std::shared_ptr<Graph::Edge> v1, std::shared_ptr<Graph::Edge> v2){
       if(v1->getSourceRef()<v2->getSourceRef()) return true;
       else if(v2->getSourceRef()<v1->getSourceRef()) return false;
@@ -159,8 +112,6 @@ std::shared_ptr<Edge> getEdge(const N& d, const E& w) const {
 
       return true;
     }
-    //begin and end functions for iterator over inner edges
-    //TODO: maybe sort elsewhere
     typename std::vector<std::shared_ptr<Edge>>::iterator begin(){
       sort(outEdges.begin(), outEdges.end(),edgeSort);
       return outEdges.begin();
@@ -184,7 +135,6 @@ std::shared_ptr<Edge> getEdge(const N& d, const E& w) const {
 
   class Edge {
    public:
-
     // Edge(nodeSource, nodeDestination, nodeWeight);
     Edge(std::shared_ptr<Node> nodeSource, std::shared_ptr<Node> nodeDestination, const E& nodeWeight) {
       source = nodeSource;
@@ -192,35 +142,23 @@ std::shared_ptr<Edge> getEdge(const N& d, const E& w) const {
       weight = nodeWeight;
     }
 
-    E getWeight() {
+    E getWeight() const {
       return weight;
     }
 
     // You can only access the contents of a weak_ptr by creating the shared_ptr equivalent (via lock)
-    N getSource() {
-      std::shared_ptr<Node> tmp = source.lock();
-      return tmp->getValue();
-    }
+    N getSource() const;
 
-    N getDest() {
-      std::shared_ptr<Node> tmp = destination.lock();
-      return tmp->getValue();
-    }
+    N getDest() const;
 
-    E& getWeightRef() {
-      return weight;
-    }
+    //for iterators
+    E& getWeightRef();
+    N& getSourceRef();
+    N& getDestRef();
 
-    N& getSourceRef() {
-      std::shared_ptr<Node> tmp = source.lock();
-      return tmp->getValueRef();
+    void setDest(std::shared_ptr<Node> newDestination) {
+      this->destination = newDestination;
     }
-
-    N& getDestRef() {
-      std::shared_ptr<Node> tmp = destination.lock();
-      return tmp->getValueRef();
-    }
-
 
    private:
     // If the shared pointer for node
@@ -231,71 +169,53 @@ std::shared_ptr<Edge> getEdge(const N& d, const E& w) const {
     E weight;
   };
 
-  bool InsertNode(const N& val) {
-    if(nodegraph[val]) return false;
-    nodegraph[val] = std::make_shared<Node>(val);
-    return true;
-  }
+  bool InsertNode(const N&);
+  bool InsertEdge(const N&, const N&, const E&);
+  bool DeleteNode(const N&);
+  bool Replace(const N&, const N&);
+  void MergeReplace(const N&, const N&);
+  void Clear();
+  bool erase(const N& src, const N& dst, const E& w);
+  bool IsNode(const N&);
+  bool IsConnected(const N& src, const N& dst);
 
-  // TODO: Add false
-  bool InsertEdge(const N& src, const N& dst, const E& w){
-    auto source = nodegraph.find(src)->second;
-    auto destination = nodegraph.find(dst)->second;
-    auto edge = std::make_shared<Edge>(source, destination, w);
-    source->outEdges.push_back(edge);
-    return true;
-  }
+  std::vector<N> GetNodes(void) const;
+  std::vector<N> GetConnected(const N& src) const;
+  std::vector<E> GetWeights(const N& src, const N& dst) const;
 
-  // TODO: Add false (and make it actually work)
-//  bool erase(const N& src, const N& dst, const E& w){
-//    auto source = nodegraph.find(src)->second;
-//    auto destination = nodegraph.find(dst)->second;
-//    auto edge = std::make_shared<Edge>(source, destination, w);
-//    std::cout << source->outEdges->getWeight();
-//    return true;
-//  }
+  friend std::ostream& operator<<(std::ostream& os, const gdwg::Graph<N, E>& g) {
 
-
-
-  bool erase(const N& src, const N& dst, const E& w){
-    // Source node
-    auto source = nodegraph.find(src)->second;
-    auto found = source->getEdge(dst, w);
-    source->outEdges.erase(std::remove(source->outEdges.begin(), source->outEdges.end(), found), source->outEdges.end());
-    return true;
-  }
-
-  bool IsNode(const N& val) {
-    if (!nodegraph[val]) return false;
-    return true;
-  }
-
-  bool IsConnected(const N& src, const N& dst) {
-    auto source = nodegraph.find(src)->second;
-    for (const auto& edge : source->outEdges) {
-      if((edge->getSource() == src) && (edge->getDest() == dst))        return true;
-    }
-    return false;
-  }
-
-  friend std::ostream& operator<<(std::ostream& os, const gdwg::Graph<N, E>& g){
     for (auto const& [key, val] : g.nodegraph) {
       os << key << " (" << std::endl;
+      //auto i = val->outEdges;
+      sort(val->outEdges.begin(), val->outEdges.end(),Node::edgeSort);
       for (std::shared_ptr<Edge> edges: val->outEdges) {
         os << "  " << edges->getDest() << " | " << edges->getWeight() << std::endl;
-              os <<"wtf "<< edges->getSource() << std::endl;
-
       }
       os << ")" << std::endl;
     }
-    return os;
+  return os;
   }
+  friend bool operator==(const gdwg::Graph<N, E>& a, const gdwg::Graph<N, E>& b) {
+    // Check nodes
+    if (a.GetNodes().size() == b.GetNodes().size()) {
+      auto nodeVecA = a.GetNodes();
+      auto nodeVecB = b.GetNodes();
+      for (unsigned long i = 0; i < nodeVecA.size(); ++i) {
+        if(nodeVecA[i] != nodeVecB[i]) return false;
 
-  // TODO: Make it actually work
-  friend bool operator==(const gdwg::Graph<N, E>&, const gdwg::Graph<N, E>&) {
+      }
+      for (const auto& edgeA : nodeVecA) {
+        for(const auto& edgeB: nodeVecB) {
+          if(a.GetWeights(edgeA, edgeB) != b.GetWeights(edgeA, edgeB)) return false;
+        }
+      }
+    }
     return true;
   }
-
+  friend bool operator!=(const gdwg::Graph<N, E>& a, const gdwg::Graph<N, E>& b) {
+    return (!(a==b));
+  }
 
   class const_iterator {
     using iterator_category = std::bidirectional_iterator_tag;
@@ -306,56 +226,14 @@ std::shared_ptr<Edge> getEdge(const N& d, const E& w) const {
    public:
 
     //*, ++, --, == and !=
-    reference operator*() const {
-      return {edge_it_->get()->getSourceRef(),edge_it_->get()->getDestRef(),edge_it_->get()->getWeightRef()};
-    }
+    reference operator*() const;
 
-    const_iterator operator++() {
-      ++edge_it_;
-      if (edge_it_ == node_it_->second->end()) {
-        do {
-          ++node_it_;
-        } while (node_it_ != sentinel_ && node_it_->second->begin() == node_it_->second->end());
-        if (node_it_ != sentinel_) {
-          edge_it_ = node_it_->second->begin();
-        }
-      }
-      return *this;
-    }
-    const_iterator operator++(int) {
-      auto copy{*this};
-      ++(*this);
-      return copy;
-    }
-  //TODO: backwards iterating
-    const_iterator operator--() {
-      if(node_it_ == sentinel_){
-        do {
-          --node_it_;
-          edge_it_ = node_it_->second->begin();
-        } while (node_it_->second->begin() == node_it_->second->end());
-        while(edge_it_ != node_it_->second->end())++edge_it_;
-        --edge_it_; // 1 before the end
-        return *this;
-      }
-      if(edge_it_ == node_it_->second->begin()){
-        do {
-          --node_it_;
-          edge_it_ = node_it_->second->begin();
-        } while (node_it_->second->begin() == node_it_->second->end());
-        while(edge_it_ != node_it_->second->end())++edge_it_;
-        --edge_it_; // 1 before the end
-        return *this;
-      }
-      // case for internally going back
-      --edge_it_;
-      return *this;
-    }
-    const_iterator operator--(int) {
-      auto copy{*this};
-      --(*this);
-      return copy;
-    }
+    const_iterator operator++();
+
+    const_iterator operator++(int);
+
+    const_iterator operator--();
+    const_iterator operator--(int);
 
     friend bool operator==(const const_iterator& lhs, const const_iterator& rhs) {
       return ((lhs.node_it_ == rhs.node_it_) && (lhs.node_it_ == lhs.sentinel_ || lhs.edge_it_ == rhs.edge_it_));
@@ -366,13 +244,11 @@ std::shared_ptr<Edge> getEdge(const N& d, const E& w) const {
     }
 
    private:
-    //pointer operator->() const { return &(operator*()); }
-    //Edge* edge_;
-    //explicit const_iterator(Edge* edge): edge_{edge} {};
+
     typename std::map<N,std::shared_ptr<Node>>::iterator node_it_; // out-most iterator
     typename std::map<N,std::shared_ptr<Node>>::iterator sentinel_;
-    //typename std::vector<std::vector<N>>::iterator node2_it_; // other_node_container_for_node
-    typename std::vector<std::shared_ptr<Edge>>::iterator edge_it_; /*other_edge_container_for_node_pair(edge_  inner iterator*/
+// end of nodes
+    typename std::vector<std::shared_ptr<Edge>>::iterator edge_it_; //edge_  inner iterator*/
 
     friend class Graph;
     const_iterator(const decltype(node_it_)& node1_it, const decltype(sentinel_)& sentinel, const decltype(edge_it_)& edge_it): node_it_{node1_it}, sentinel_{sentinel}, edge_it_{edge_it} {}
@@ -388,56 +264,11 @@ std::shared_ptr<Edge> getEdge(const N& d, const E& w) const {
    public:
 
     //*, ++, --, == and !=
-    reference operator*() const {
-      return {edge_it_->get()->getSourceRef(),edge_it_->get()->getDestRef(),edge_it_->get()->getWeightRef()};
-    }
-
-    const_reverse_iterator operator++() {
-      ++edge_it_;
-      if (edge_it_ == node_it_->second->rend()) {
-        do {
-          ++node_it_;
-        } while (node_it_ != sentinel_ && node_it_->second->rbegin() == node_it_->second->rend());
-        if (node_it_ != sentinel_) {
-          edge_it_ = node_it_->second->rbegin();
-        }
-      }
-      return *this;
-    }
-    const_reverse_iterator operator++(int) {
-      auto copy{*this};
-      ++(*this);
-      return copy;
-    }
-  //TODO: backwards iterating
-    const_reverse_iterator operator--() {
-      if(node_it_ == sentinel_){
-        do {
-          --node_it_;
-          edge_it_ = node_it_->second->rbegin();
-        } while (node_it_->second->rbegin() == node_it_->second->rend());
-        while(edge_it_ != node_it_->second->rend())++edge_it_;
-        --edge_it_; // 1 before the end
-        return *this;
-      }
-      if(edge_it_ == node_it_->second->rbegin()){
-        do {
-          --node_it_;
-          edge_it_ = node_it_->second->rbegin();
-        } while (node_it_->second->rbegin() == node_it_->second->rend());
-        while(edge_it_ != node_it_->second->rend())++edge_it_;
-        --edge_it_; // 1 before the end
-        return *this;
-      }
-      // case for internally going back
-      --edge_it_;
-      return *this;
-    }
-    const_reverse_iterator operator--(int) {
-      auto copy{*this};
-      --(*this);
-      return copy;
-    }
+    reference operator*() const;
+    const_reverse_iterator operator++();
+    const_reverse_iterator operator++(int);
+    const_reverse_iterator operator--();
+    const_reverse_iterator operator--(int);
 
     friend bool operator==(const const_reverse_iterator& lhs, const const_reverse_iterator& rhs) {
       return ((lhs.node_it_ == rhs.node_it_) && (lhs.node_it_ == lhs.sentinel_ || lhs.edge_it_ == rhs.edge_it_));
@@ -448,9 +279,6 @@ std::shared_ptr<Edge> getEdge(const N& d, const E& w) const {
     }
 
    private:
-    //pointer operator->() const { return &(operator*()); }
-    //Edge* edge_;
-    //explicit const_iterator(Edge* edge): edge_{edge} {};
     typename std::map<N,std::shared_ptr<Node>>::reverse_iterator node_it_; // out-most iterator
     typename std::map<N,std::shared_ptr<Node>>::reverse_iterator sentinel_;
     //typename std::vector<std::vector<N>>::iterator node2_it_; // other_node_container_for_node
@@ -460,83 +288,24 @@ std::shared_ptr<Edge> getEdge(const N& d, const E& w) const {
     const_reverse_iterator(const decltype(node_it_)& node1_it, const decltype(sentinel_)& sentinel, const decltype(edge_it_)& edge_it): node_it_{node1_it}, sentinel_{sentinel}, edge_it_{edge_it} {}
   };
 
-  std::vector<std::shared_ptr<Node>> GetNodeClasses(){
-    std::vector<std::shared_ptr<Node>> v;
-    for(const auto& it : nodegraph) {
-      v.push_back(it.second);
-    }
-    return v;
-  }
 
-
-  const_iterator begin(){
-    // What if the first element is empty?
-    if (auto first = std::find_if(nodegraph.begin(), nodegraph.end(), [] (const std::pair<N,std::shared_ptr<Node>>& s) { return !((s.second)->empty()); }); first != nodegraph.end()) {
-      return const_iterator{first, nodegraph.end(), first->second->begin()};
-    }
-    return end();
-  }
-
-  const_iterator end(){
-    return const_iterator{nodegraph.end(), nodegraph.end(), {}};
-  }
-
-  const_reverse_iterator rbegin(){
-    // What if the first element is empty?
-    if (auto first = std::find_if(nodegraph.rbegin(), nodegraph.rend(), [] (const std::pair<N,std::shared_ptr<Node>>& s) { return !((s.second)->empty()); }); first != nodegraph.rend()) {
-      return const_reverse_iterator{first, nodegraph.rend(), first->second->rbegin()};
-    }
-    return rend();
-  }
-
-  const_reverse_iterator rend(){
-    return const_reverse_iterator{nodegraph.rend(), nodegraph.rend(), {}};
-  }
-
-  const_iterator cbegin(){
-    return begin();
-  }
-
-  const_iterator cend(){
-    return end();
-  }
-
-  const_reverse_iterator crbegin(){
-    return rbegin();
-  }
-
-  const_reverse_iterator crend(){
-    return crend();
-  }
-
-
-  const_iterator erase(const_iterator it){
-    if(it!=end()){
-      auto oldSource = std::get<0>(*it);
-      auto oldDest = std::get<1>(*it);
-      auto oldWeight = std::get<2>(*it);
-      ++it;
-      erase(oldSource,oldDest,oldWeight);
-      return it;
-    }
-    return end();
-  }
-
-  const_iterator find(const N& source, const N& dest, const E& weight){
-    auto it=begin();
-    for (; it != end(); ++it)
-    {
-      auto tuple = *it;
-      if(std::get<0>(tuple)==source && std::get<1>(tuple)==dest && std::get<2>(tuple)==weight) return it;
-    }
-    return it;
-  }
-
+  const_iterator begin();
+  const_iterator end();
+  const_reverse_iterator rbegin();
+  const_reverse_iterator rend();
+  const_iterator cbegin();
+  const_iterator cend();
+  const_reverse_iterator crbegin();
+  const_reverse_iterator crend();
+  const_iterator erase(const_iterator it);
+  const_iterator find(const N& source, const N& dest, const E& weight);
 
  private:
   std::map<N, std::shared_ptr<Node>> nodegraph;
 };
 
+
 }  // namespace gdwg
+#include "assignments/dg/graph.tpp"
 
 #endif  // ASSIGNMENTS_DG_GRAPH_H_
