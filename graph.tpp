@@ -1,6 +1,13 @@
+#include <algorithm>
+#include <memory>
+#include <tuple>
+#include <utility>
+#include <vector>
+
 // Constructor for begin, end iterators
 template <typename N, typename E>
-gdwg::Graph<N, E>::Graph(typename std::vector<N>::const_iterator begin, typename std::vector<N>::const_iterator end){
+gdwg::Graph<N, E>::Graph(typename std::vector<N>::const_iterator begin,
+                         typename std::vector<N>::const_iterator end) {
   for (auto i = begin; i != end; ++i) {
     nodegraph[*i] = std::make_shared<Node>(*i);
   }
@@ -8,7 +15,8 @@ gdwg::Graph<N, E>::Graph(typename std::vector<N>::const_iterator begin, typename
 
 // Constructor for tuple begin, end iterators
 template <typename N, typename E>
-gdwg::Graph<N, E>::Graph(typename std::vector<std::tuple<N, N, E>>::const_iterator begin, typename std::vector<std::tuple<N, N, E>>::const_iterator end){
+gdwg::Graph<N, E>::Graph(typename std::vector<std::tuple<N, N, E>>::const_iterator begin,
+                         typename std::vector<std::tuple<N, N, E>>::const_iterator end) {
   for (auto i = begin; i != end; ++i) {
     auto source_val = std::get<0>(*i);
     auto dest_val = std::get<1>(*i);
@@ -38,7 +46,7 @@ gdwg::Graph<N, E>::Graph(typename std::vector<std::tuple<N, N, E>>::const_iterat
 
 // Constructor for initialiser list of nodes
 template <typename N, typename E>
-gdwg::Graph<N,E>::Graph(typename std::initializer_list<N> list) {
+gdwg::Graph<N, E>::Graph(typename std::initializer_list<N> list) {
   for (auto i = list.begin(); i != list.end(); ++i) {
     nodegraph[*i] = std::make_shared<Node>(*i);
   }
@@ -63,12 +71,16 @@ gdwg::Graph<N, E>::Graph(Graph& orig) {
     }
   }
 }
+
+// Checks if node exists
 template <typename N, typename E>
 bool gdwg::Graph<N, E>::IsNode(const N& val) {
-  if (nodegraph.find(val) == nodegraph.end()) return false;
+  if (nodegraph.find(val) == nodegraph.end())
+    return false;
   return true;
 }
 
+// Inserts node of value 'val' into graph
 template <typename N, typename E>
 bool gdwg::Graph<N, E>::InsertNode(const N& val) {
   auto it = nodegraph.find(val);
@@ -79,27 +91,32 @@ bool gdwg::Graph<N, E>::InsertNode(const N& val) {
   return false;
 }
 
+// Inserts edge of weight 'w' between src and dst nodes
 template <typename N, typename E>
-bool gdwg::Graph<N, E>::InsertEdge(const N& src, const N& dst, const E& w){
-  if(!this->IsNode(src) || !this->IsNode(dst)) {
-    throw std::runtime_error("Cannot call Graph::InsertEdge when either src or dst node does not exist");
+bool gdwg::Graph<N, E>::InsertEdge(const N& src, const N& dst, const E& w) {
+  if (!this->IsNode(src) || !this->IsNode(dst)) {
+    throw std::runtime_error(
+        "Cannot call Graph::InsertEdge when either src or dst node does not exist");
   }
   auto source = nodegraph.find(src)->second;
   auto destination = nodegraph.find(dst)->second;
   auto edge = std::make_shared<Edge>(source, destination, w);
 
   // Return false because it already exists
-  if (source->getEdge(dst, w) == edge) {
-    return false;
+  for (const auto& e : source->outEdges) {
+    if (e->getDest() == dst && e->getWeight() == w) {
+      return false;
+    }
   }
-
   source->outEdges.push_back(edge);
   return true;
 }
 
+// Deletes node and all corresponding edges
 template <typename N, typename E>
 bool gdwg::Graph<N, E>::DeleteNode(const N& node) {
-  if(!this->IsNode(node)) return false;
+  if (nodegraph.find(node) == nodegraph.end())
+    return false;
 
   auto del = nodegraph.find(node)->second;
   // To delete all edges within the node
@@ -109,21 +126,22 @@ bool gdwg::Graph<N, E>::DeleteNode(const N& node) {
   // To delete all edges containing node as destination
   for (const auto& [key, val] : nodegraph) {
     for (const auto& edge : val->outEdges) {
-      if(edge->getDest() == node) {
+      if (edge->getDest() == node) {
         erase(edge->getSource(), edge->getDest(), edge->getWeight());
       }
-      (void) key;
+      (void)key;
     }
   }
   nodegraph.erase(node);
   return true;
 }
 
-
+// Replaces node name with a new name/value
 template <typename N, typename E>
-bool gdwg::Graph<N,E>::Replace(const N& oldData, const N& newData) {
-  if(this->IsNode(newData)) return false;
-  if(!this->IsNode(oldData)) {
+bool gdwg::Graph<N, E>::Replace(const N& oldData, const N& newData) {
+  if (this->IsNode(newData))
+    return false;
+  if (!this->IsNode(oldData)) {
     throw std::runtime_error("Cannot call Graph::Replace on a node that doesn't exist");
   }
 
@@ -140,17 +158,19 @@ bool gdwg::Graph<N,E>::Replace(const N& oldData, const N& newData) {
         edge->setDest(nodegraph.find(newData)->second);
       }
     }
-    (void) key;
+    (void)key;
   }
 
   nodegraph.erase(oldData);
   return true;
 }
 
+// Replaces node with an existing node and transfers it's edges to the new replacement
 template <typename N, typename E>
-void gdwg::Graph<N,E>::MergeReplace(const N& oldData, const N& newData) {
-  if(!this->IsNode(oldData) || !this->IsNode(newData)) {
-    throw std::runtime_error("Cannot call Graph::MergeReplace on old or new data if they don't exist in the graph");
+void gdwg::Graph<N, E>::MergeReplace(const N& oldData, const N& newData) {
+  if (!this->IsNode(oldData) || !this->IsNode(newData)) {
+    throw std::runtime_error(
+        "Cannot call Graph::MergeReplace on old or new data if they don't exist in the graph");
   }
 
   std::shared_ptr<Node> newNode = nodegraph[newData];
@@ -169,7 +189,7 @@ void gdwg::Graph<N,E>::MergeReplace(const N& oldData, const N& newData) {
     auto nodeEdges = val->outEdges;
     for (const auto& edge : nodeEdges) {
       // If destination is the old node
-      if(edge->getDest() == oldData) {
+      if (edge->getDest() == oldData) {
         // Change the destination of the current edge to be newData instead
         edge->setDest(newNode);
       }
@@ -179,56 +199,66 @@ void gdwg::Graph<N,E>::MergeReplace(const N& oldData, const N& newData) {
     std::vector<std::shared_ptr<Edge>> seen;
     for (auto it = std::begin(nodeEdges); it != std::end(nodeEdges); ++it) {
       auto edgeSeen = val->getEdge((*it)->getDest(), (*it)->getWeight());
-      if(std::find(seen.begin(), seen.end(), edgeSeen) != seen.end()) {
+      if (std::find(seen.begin(), seen.end(), edgeSeen) != seen.end()) {
         this->erase((*it)->getSource(), (*it)->getDest(), (*it)->getWeight());
       }
       seen.push_back(edgeSeen);
     }
-    (void) key;
+    (void)key;
   }
   this->DeleteNode(oldData);
 }
 
+// Completely clears the graph of it's nodes and edges
 template <typename N, typename E>
-void gdwg::Graph<N,E>::Clear() {
+void gdwg::Graph<N, E>::Clear() {
   nodegraph.clear();
 }
 
+// Removes an edge from the graph
 template <typename N, typename E>
-bool gdwg::Graph<N, E>::erase(const N& src, const N& dst, const E& w){
+bool gdwg::Graph<N, E>::erase(const N& src, const N& dst, const E& w) {
   // Source node
   auto source = nodegraph.find(src)->second;
   auto found = source->getEdge(dst, w);
-  if(found == nullptr) return false;
-  source->outEdges.erase(std::remove(source->outEdges.begin(), source->outEdges.end(), found), source->outEdges.end());
+  if (found == nullptr)
+    return false;
+  // Uses erase-remove idiom (?)
+  source->outEdges.erase(std::remove(source->outEdges.begin(), source->outEdges.end(), found),
+                         source->outEdges.end());
   return true;
 }
 
+// Finds all nodes connected between src and dest
 template <typename N, typename E>
 bool gdwg::Graph<N, E>::IsConnected(const N& src, const N& dst) {
-  if(!IsNode(src) || !IsNode(dst)) {
-    throw std::runtime_error("Cannot call Graph::IsConnected if src or dst node don't exist in the graph");
+  if (!IsNode(src) || !IsNode(dst)) {
+    throw std::runtime_error(
+        "Cannot call Graph::IsConnected if src or dst node don't exist in the graph");
   }
   auto source = nodegraph.find(src)->second;
   for (const auto& edge : source->outEdges) {
-    if((edge->getSource() == src) && (edge->getDest() == dst)) return true;
+    if ((edge->getSource() == src) && (edge->getDest() == dst))
+      return true;
   }
   return false;
 }
 
+// Creates a vector containing all nodes in the DG
 template <typename N, typename E>
-std::vector<N> gdwg::Graph<N,E>::GetNodes(void) const {
+std::vector<N> gdwg::Graph<N, E>::GetNodes(void) const {
   std::vector<N> ret;
-  for(const auto& it : nodegraph) {
+  for (const auto& it : nodegraph) {
     ret.push_back(it.first);
   }
   sort(ret.begin(), ret.end());
   return ret;
 }
 
+// Creates a vector containing all edges the node contains
 template <typename N, typename E>
-std::vector<N> gdwg::Graph<N,E>::GetConnected(const N& src) const {
-  if(nodegraph.find(src) == nodegraph.end()) {
+std::vector<N> gdwg::Graph<N, E>::GetConnected(const N& src) const {
+  if (nodegraph.find(src) == nodegraph.end()) {
     throw std::out_of_range("Cannot call Graph::GetConnected if src doesn't exist in the graph");
   }
   std::vector<N> ret;
@@ -241,15 +271,17 @@ std::vector<N> gdwg::Graph<N,E>::GetConnected(const N& src) const {
   return ret;
 }
 
+// Creates a vector containing all edges/weights that connects src and dst
 template <typename N, typename E>
-std::vector<E> gdwg::Graph<N,E>::GetWeights(const N& src, const N& dst) const {
-  if(nodegraph.find(src) == nodegraph.end() || nodegraph.find(dst) == nodegraph.end()) {
-    throw std::out_of_range("Cannot call Graph::GetWeights if src or dst node don't exist in the graph");
+std::vector<E> gdwg::Graph<N, E>::GetWeights(const N& src, const N& dst) const {
+  if (nodegraph.find(src) == nodegraph.end() || nodegraph.find(dst) == nodegraph.end()) {
+    throw std::out_of_range(
+        "Cannot call Graph::GetWeights if src or dst node don't exist in the graph");
   }
   std::vector<E> ret;
   auto source = nodegraph.find(src)->second;
   for (const auto& edge : source->outEdges) {
-    if(edge->getDest() == dst) {
+    if (edge->getDest() == dst) {
       ret.push_back(edge->getWeight());
     }
   }
@@ -257,96 +289,104 @@ std::vector<E> gdwg::Graph<N,E>::GetWeights(const N& src, const N& dst) const {
   return ret;
 }
 
-
+// Edge function, shows dest
 template <typename N, typename E>
-N gdwg::Graph<N, E>::Edge::getDest() const{
+N gdwg::Graph<N, E>::Edge::getDest() const {
   std::shared_ptr<Node> tmp = destination.lock();
   return tmp->getValue();
 }
 
+// Edge function, shows source
 template <typename N, typename E>
 N gdwg::Graph<N, E>::Edge::getSource() const {
   std::shared_ptr<Node> tmp = source.lock();
   return tmp->getValue();
 }
 
+// Iterator related functions
 
-//Iterator related functions
-
-//in graph
+// in graph
 template <typename N, typename E>
-typename gdwg::Graph<N,E>::const_iterator gdwg::Graph<N, E>::find(const N& source, const N& dest, const E& weight){
-  auto it=begin();
-  for (; it != end(); ++it)
-  {
+typename gdwg::Graph<N, E>::const_iterator
+gdwg::Graph<N, E>::find(const N& source, const N& dest, const E& weight) {
+  auto it = begin();
+  for (; it != end(); ++it) {
     auto tuple = *it;
-    if(std::get<0>(tuple)==source && std::get<1>(tuple)==dest && std::get<2>(tuple)==weight) return it;
+    if (std::get<0>(tuple) == source && std::get<1>(tuple) == dest && std::get<2>(tuple) == weight)
+      return it;
   }
   return it;
 }
 
 template <typename N, typename E>
-typename gdwg::Graph<N, E>::const_iterator gdwg::Graph<N, E>::erase(const_iterator it){
-  if(it!=end()){
+typename gdwg::Graph<N, E>::const_iterator gdwg::Graph<N, E>::erase(const_iterator it) {
+  if (it != end()) {
     auto oldSource = std::get<0>(*it);
     auto oldDest = std::get<1>(*it);
     auto oldWeight = std::get<2>(*it);
     ++it;
-    if(erase(oldSource,oldDest,oldWeight)==false) it = end();
+    if (erase(oldSource, oldDest, oldWeight) == false)
+      it = end();
     return it;
   }
   return end();
 }
 
 template <typename N, typename E>
-typename gdwg::Graph<N, E>::const_iterator gdwg::Graph<N, E>::cbegin(){
+typename gdwg::Graph<N, E>::const_iterator gdwg::Graph<N, E>::cbegin() {
   return begin();
 }
 template <typename N, typename E>
-typename gdwg::Graph<N, E>::const_iterator gdwg::Graph<N, E>::cend(){
+typename gdwg::Graph<N, E>::const_iterator gdwg::Graph<N, E>::cend() {
   return end();
 }
 template <typename N, typename E>
-typename gdwg::Graph<N, E>::const_reverse_iterator gdwg::Graph<N, E>::crbegin(){
+typename gdwg::Graph<N, E>::const_reverse_iterator gdwg::Graph<N, E>::crbegin() {
   return rbegin();
 }
 template <typename N, typename E>
-typename gdwg::Graph<N, E>::const_reverse_iterator gdwg::Graph<N, E>::crend(){
+typename gdwg::Graph<N, E>::const_reverse_iterator gdwg::Graph<N, E>::crend() {
   return rend();
 }
 
 template <typename N, typename E>
-typename gdwg::Graph<N, E>::const_iterator gdwg::Graph<N, E>::begin(){
+typename gdwg::Graph<N, E>::const_iterator gdwg::Graph<N, E>::begin() {
   // What if the first element is empty?
-  if (auto first = std::find_if(nodegraph.begin(), nodegraph.end(), [] (const std::pair<N,std::shared_ptr<Node>>& s) { return !((s.second)->empty()); }); first != nodegraph.end()) {
+  if (auto first = std::find_if(
+          nodegraph.begin(), nodegraph.end(),
+          [](const std::pair<N, std::shared_ptr<Node>>& s) { return !((s.second)->empty()); });
+      first != nodegraph.end()) {
     return const_iterator{first, nodegraph.end(), first->second->begin()};
   }
   return end();
 }
 template <typename N, typename E>
-typename gdwg::Graph<N, E>::const_iterator gdwg::Graph<N, E>::end(){
+typename gdwg::Graph<N, E>::const_iterator gdwg::Graph<N, E>::end() {
   return const_iterator{nodegraph.end(), nodegraph.end(), {}};
 }
 template <typename N, typename E>
-typename gdwg::Graph<N, E>::const_reverse_iterator gdwg::Graph<N, E>::rbegin(){
+typename gdwg::Graph<N, E>::const_reverse_iterator gdwg::Graph<N, E>::rbegin() {
   // What if the first element is empty?
-  if (auto first = std::find_if(nodegraph.rbegin(), nodegraph.rend(), [] (const std::pair<N,std::shared_ptr<Node>>& s) { return !((s.second)->empty()); }); first != nodegraph.rend()) {
+  if (auto first = std::find_if(
+          nodegraph.rbegin(), nodegraph.rend(),
+          [](const std::pair<N, std::shared_ptr<Node>>& s) { return !((s.second)->empty()); });
+      first != nodegraph.rend()) {
     return const_reverse_iterator{first, nodegraph.rend(), first->second->rbegin()};
   }
   return rend();
 }
 template <typename N, typename E>
-typename gdwg::Graph<N, E>::const_reverse_iterator gdwg::Graph<N, E>::rend(){
+typename gdwg::Graph<N, E>::const_reverse_iterator gdwg::Graph<N, E>::rend() {
   return const_reverse_iterator{nodegraph.rend(), nodegraph.rend(), {}};
 }
 
-//in node
+// in node
 template <typename N, typename E>
 N& gdwg::Graph<N, E>::Node::getValueRef() {
   return value;
 }
 
-//in edge
+// in edge
 template <typename N, typename E>
 E& gdwg::Graph<N, E>::Edge::getWeightRef() {
   return weight;
@@ -368,8 +408,10 @@ N& gdwg::Graph<N, E>::Edge::getDestRef() {
 
 //*, ++, --, == and !=
 template <typename N, typename E>
-typename gdwg::Graph<N, E>::const_iterator::reference gdwg::Graph<N, E>::const_iterator::operator*() const{
-  return {edge_it_->get()->getSourceRef(),edge_it_->get()->getDestRef(),edge_it_->get()->getWeightRef()};
+typename gdwg::Graph<N, E>::const_iterator::reference gdwg::Graph<N, E>::const_iterator::
+operator*() const {
+  return {edge_it_->get()->getSourceRef(), edge_it_->get()->getDestRef(),
+          edge_it_->get()->getWeightRef()};
 }
 
 template <typename N, typename E>
@@ -394,22 +436,24 @@ typename gdwg::Graph<N, E>::const_iterator gdwg::Graph<N, E>::const_iterator::op
 }
 template <typename N, typename E>
 typename gdwg::Graph<N, E>::const_iterator gdwg::Graph<N, E>::const_iterator::operator--() {
-  if(node_it_ == sentinel_){
+  if (node_it_ == sentinel_) {
     do {
       --node_it_;
       edge_it_ = node_it_->second->begin();
     } while (node_it_->second->begin() == node_it_->second->end());
-    while(edge_it_ != node_it_->second->end())++edge_it_;
-    --edge_it_; // 1 before the end
+    while (edge_it_ != node_it_->second->end())
+      ++edge_it_;
+    --edge_it_;  // 1 before the end
     return *this;
   }
-  if(edge_it_ == node_it_->second->begin()){
+  if (edge_it_ == node_it_->second->begin()) {
     do {
       --node_it_;
       edge_it_ = node_it_->second->begin();
     } while (node_it_->second->begin() == node_it_->second->end());
-    while(edge_it_ != node_it_->second->end())++edge_it_;
-    --edge_it_; // 1 before the end
+    while (edge_it_ != node_it_->second->end())
+      ++edge_it_;
+    --edge_it_;  // 1 before the end
     return *this;
   }
   // case for internally going back
@@ -424,16 +468,19 @@ typename gdwg::Graph<N, E>::const_iterator gdwg::Graph<N, E>::const_iterator::op
   return copy;
 }
 
-//reverse iterator functions
+// reverse iterator functions
 
 //*, ++, --, == and !=
 template <typename N, typename E>
-typename gdwg::Graph<N, E>::const_reverse_iterator::reference gdwg::Graph<N, E>::const_reverse_iterator::operator*() const{
-  return {edge_it_->get()->getSourceRef(),edge_it_->get()->getDestRef(),edge_it_->get()->getWeightRef()};
+typename gdwg::Graph<N, E>::const_reverse_iterator::reference
+    gdwg::Graph<N, E>::const_reverse_iterator::operator*() const {
+  return {edge_it_->get()->getSourceRef(), edge_it_->get()->getDestRef(),
+          edge_it_->get()->getWeightRef()};
 }
 
 template <typename N, typename E>
-typename gdwg::Graph<N, E>::const_reverse_iterator gdwg::Graph<N, E>::const_reverse_iterator::operator++() {
+typename gdwg::Graph<N, E>::const_reverse_iterator gdwg::Graph<N, E>::const_reverse_iterator::
+operator++() {
   ++edge_it_;
   if (edge_it_ == node_it_->second->rend()) {
     do {
@@ -447,30 +494,34 @@ typename gdwg::Graph<N, E>::const_reverse_iterator gdwg::Graph<N, E>::const_reve
 }
 
 template <typename N, typename E>
-typename gdwg::Graph<N, E>::const_reverse_iterator gdwg::Graph<N, E>::const_reverse_iterator::operator++(int) {
+typename gdwg::Graph<N, E>::const_reverse_iterator gdwg::Graph<N, E>::const_reverse_iterator::
+operator++(int) {
   auto copy{*this};
   ++(*this);
   return copy;
 }
 
 template <typename N, typename E>
-typename gdwg::Graph<N, E>::const_reverse_iterator gdwg::Graph<N, E>::const_reverse_iterator::operator--() {
-  if(node_it_ == sentinel_){
+typename gdwg::Graph<N, E>::const_reverse_iterator gdwg::Graph<N, E>::const_reverse_iterator::
+operator--() {
+  if (node_it_ == sentinel_) {
     do {
       --node_it_;
       edge_it_ = node_it_->second->rbegin();
     } while (node_it_->second->rbegin() == node_it_->second->rend());
-    while(edge_it_ != node_it_->second->rend())++edge_it_;
-    --edge_it_; // 1 before the end
+    while (edge_it_ != node_it_->second->rend())
+      ++edge_it_;
+    --edge_it_;  // 1 before the end
     return *this;
   }
-  if(edge_it_ == node_it_->second->rbegin()){
+  if (edge_it_ == node_it_->second->rbegin()) {
     do {
       --node_it_;
       edge_it_ = node_it_->second->rbegin();
     } while (node_it_->second->rbegin() == node_it_->second->rend());
-    while(edge_it_ != node_it_->second->rend())++edge_it_;
-    --edge_it_; // 1 before the end
+    while (edge_it_ != node_it_->second->rend())
+      ++edge_it_;
+    --edge_it_;  // 1 before the end
     return *this;
   }
   // case for internally going back
@@ -479,7 +530,8 @@ typename gdwg::Graph<N, E>::const_reverse_iterator gdwg::Graph<N, E>::const_reve
 }
 
 template <typename N, typename E>
-typename gdwg::Graph<N, E>::const_reverse_iterator gdwg::Graph<N, E>::const_reverse_iterator::operator--(int) {
+typename gdwg::Graph<N, E>::const_reverse_iterator gdwg::Graph<N, E>::const_reverse_iterator::
+operator--(int) {
   auto copy{*this};
   --(*this);
   return copy;
