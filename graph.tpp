@@ -307,7 +307,7 @@ N gdwg::Graph<N, E>::Edge::getSource() const {
 
 // in graph
 template <typename N, typename E>
-typename gdwg::Graph<N, E>::const_iterator
+typename gdwg::Graph<N, E>::const_iterator const
 gdwg::Graph<N, E>::find(const N& source, const N& dest, const E& weight) {
   auto it = begin();
   for (; it != end(); ++it) {
@@ -333,24 +333,24 @@ typename gdwg::Graph<N, E>::const_iterator gdwg::Graph<N, E>::erase(const_iterat
 }
 
 template <typename N, typename E>
-typename gdwg::Graph<N, E>::const_iterator gdwg::Graph<N, E>::cbegin() {
+typename gdwg::Graph<N, E>::const_iterator const gdwg::Graph<N, E>::cbegin() {
   return begin();
 }
 template <typename N, typename E>
-typename gdwg::Graph<N, E>::const_iterator gdwg::Graph<N, E>::cend() {
+typename gdwg::Graph<N, E>::const_iterator const gdwg::Graph<N, E>::cend() {
   return end();
 }
 template <typename N, typename E>
-typename gdwg::Graph<N, E>::const_reverse_iterator gdwg::Graph<N, E>::crbegin() {
+typename gdwg::Graph<N, E>::const_reverse_iterator const gdwg::Graph<N, E>::crbegin() {
   return rbegin();
 }
 template <typename N, typename E>
-typename gdwg::Graph<N, E>::const_reverse_iterator gdwg::Graph<N, E>::crend() {
+typename gdwg::Graph<N, E>::const_reverse_iterator const gdwg::Graph<N, E>::crend() {
   return rend();
 }
 
 template <typename N, typename E>
-typename gdwg::Graph<N, E>::const_iterator gdwg::Graph<N, E>::begin() {
+typename gdwg::Graph<N, E>::const_iterator const gdwg::Graph<N, E>::begin() {
   // What if the first element is empty?
   if (auto first = std::find_if(
           nodegraph.begin(), nodegraph.end(),
@@ -361,11 +361,11 @@ typename gdwg::Graph<N, E>::const_iterator gdwg::Graph<N, E>::begin() {
   return end();
 }
 template <typename N, typename E>
-typename gdwg::Graph<N, E>::const_iterator gdwg::Graph<N, E>::end() {
+typename gdwg::Graph<N, E>::const_iterator const gdwg::Graph<N, E>::end() {
   return const_iterator{nodegraph.end(), nodegraph.end(), {}};
 }
 template <typename N, typename E>
-typename gdwg::Graph<N, E>::const_reverse_iterator gdwg::Graph<N, E>::rbegin() {
+typename gdwg::Graph<N, E>::const_reverse_iterator const gdwg::Graph<N, E>::rbegin() {
   // What if the first element is empty?
   if (auto first = std::find_if(
           nodegraph.rbegin(), nodegraph.rend(),
@@ -376,7 +376,7 @@ typename gdwg::Graph<N, E>::const_reverse_iterator gdwg::Graph<N, E>::rbegin() {
   return rend();
 }
 template <typename N, typename E>
-typename gdwg::Graph<N, E>::const_reverse_iterator gdwg::Graph<N, E>::rend() {
+typename gdwg::Graph<N, E>::const_reverse_iterator const gdwg::Graph<N, E>::rend() {
   return const_reverse_iterator{nodegraph.rend(), nodegraph.rend(), {}};
 }
 
