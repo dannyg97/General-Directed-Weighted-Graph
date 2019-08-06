@@ -294,16 +294,16 @@ class Graph {
       : node_it_{node1_it}, sentinel_{sentinel}, edge_it_{edge_it} {}
   };
 
-  const_iterator begin();
-  const_iterator end();
-  const_reverse_iterator rbegin();
-  const_reverse_iterator rend();
-  const_iterator cbegin();
-  const_iterator cend();
-  const_reverse_iterator crbegin();
-  const_reverse_iterator crend();
+  const_iterator const begin();
+  const_iterator const end();
+  const_reverse_iterator const rbegin();
+  const_reverse_iterator const rend();
+  const_iterator const cbegin();
+  const_iterator const cend();
+  const_reverse_iterator const crbegin();
+  const_reverse_iterator const crend();
   const_iterator erase(const_iterator it);
-  const_iterator find(const N& source, const N& dest, const E& weight);
+  const_iterator const find(const N& source, const N& dest, const E& weight);
 
  private:
   std::map<N, std::shared_ptr<Node>> nodegraph;
