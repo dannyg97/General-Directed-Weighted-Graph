@@ -416,13 +416,17 @@ SCENARIO("Testing iterator functions") {
       }
       THEN("postfix ++ and -- returns a copy while prefix returns the new iterator"){
         auto it2=it++;
-        auto it4=++it;
+        auto it3=++it;
         REQUIRE(it1==it2);
-        REQUIRE(it4==it);
+        REQUIRE(it3==it);
+        auto it4=it--;
+        auto it5=--it;
+        REQUIRE(it4==it3);
+        REQUIRE(it5==it1);
       }
       THEN("!= should return true for iterators not at the same edge"){
-        REQUIRE(it!=it1);
-        REQUIRE(it2!=it4);
+        auto it2=it++;
+        REQUIRE(it!=it2);
       }
     }
 
